@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Field notes, research stories, and science experiences from Nathan L. R. Williams." />
-  <title>Field Notes · Nathan L. R. Williams</title>
+  <meta name="description" content="Field notes from a summer sampling day at SPOT and an investigation into Prochlorococcus ASV retention in the eASV pipeline." />
+  <title>Ahoy from SPOT and a curious Prochlorococcus issue · Nathan L. R. Williams</title>
   <link rel="stylesheet" href="../css/style.css" />
   <script defer src="../js/script.js"></script>
 </head>
@@ -18,8 +18,8 @@
         <a href="../index.html">Home</a>
         <a href="../index.html#research">Research</a>
         <a href="../index.html#publications">Publications</a>
-        <a href="https://nwilliams96.github.io/GRUMP/">GRUMP Explorer</a>
-        <a href="https://nwilliams96.github.io/GRUMP/workshop/">GRUMP Workshop</a>
+        <a href="https://www.nathanlrwilliams.com/GRUMP/">GRUMP Explorer</a>
+        <a href="https://www.nathanlrwilliams.com/GRUMP/workshop/">GRUMP Workshop</a>
         <a href="index.html" aria-current="page">Blog</a>
         <a href="../index.html#contact">Contact</a>
         <a href="https://www.nathanlrwilliams.com/eASV-Pipeline-Tutorial/">eASV Pipeline Tutorial</a>
@@ -28,18 +28,68 @@
   </header>
 
   <main id="main-content">
-    <section class="page-hero">
+    <section class="page-hero blog-post-header">
       <div class="page-hero-inner">
-        <p class="lead blog-intro">First post coming soon...</p>
+        <p class="kicker">Lab notes · August 14, 2026</p>
+        <h1>Ahoy from another beautiful week at SPOT and a curious <em>Prochlorococcus</em> issue…</h1>
       </div>
     </section>
 
-    <section class="wide-section">
-      <p class="kicker">LAB NOTES</p>
-      <div class="empty-state">
-        First post coming soon...
+    <article class="wide-section blog-post">
+      <figure class="blog-feature-image">
+        <img src="../images/blog/spot-august-2026/PXL_20260812_150944974.jpg" alt="Open ocean and a cargo ship viewed from a research vessel near SPOT" />
+        <figcaption>At sea near the San Pedro Ocean Time-series, August 2026.</figcaption>
+      </figure>
+
+      <div class="blog-post-prose">
+        <p>
+          Another sunny summer day out at SPOT this week! Everything ran smoothly, and we were treated to a display of
+          dolphins jumping and diving through the waves on our return to port.
+        </p>
+        <p>
+          Filtration now takes a little longer since we learned that a high RPM on the peristaltic pump can create too
+          much pressure for the Sterivex filter and perhaps cause it to rupture. This may also be caused by filtering
+          too much water through a Sterivex, as its maximum load is 2 L. In one of our projects, we noted many
+          prokaryotes that we would expect to be larger than 0.22 µm in our Anotop filters, which are there to collect
+          viruses. Nevertheless, we took two pumps, and all the water was filtered before we arrived back at port.
+        </p>
+
+        <h2>A curious <em>Prochlorococcus</em> issue</h2>
+        <p>
+          This week, I am running tests and tweaking our eASV pipeline to retain more <em>Prochlorococcus</em> ASVs. I
+          re-ran some NCOG data for a colleague using our pipeline, and we noticed that, when comparing the two
+          datasets, ours had fewer unique <em>Prochlorococcus</em> ASVs. I will be tinkering with maxEE, trim lengths,
+          and the chimera-removal algorithm to determine the source of the issue. Stay tuned!
+        </p>
       </div>
-    </section>
+
+      <div class="blog-photo-grid" aria-label="Photographs from the August 2026 SPOT cruise">
+        <figure>
+          <img loading="lazy" src="../images/blog/spot-august-2026/PXL_20260812_155552378.jpg" alt="Peristaltic pumps and filtration supplies on the research vessel" />
+        </figure>
+        <figure>
+          <img loading="lazy" src="../images/blog/spot-august-2026/PXL_20260812_160123368.jpg" alt="Peristaltic pumps filtering seawater on deck" />
+        </figure>
+        <figure>
+          <img loading="lazy" src="../images/blog/spot-august-2026/PXL_20260812_171328733.jpg" alt="A water sample being collected from a CTD rosette" />
+        </figure>
+        <figure>
+          <img loading="lazy" src="../images/blog/spot-august-2026/PXL_20260812_171800835.jpg" alt="A seawater sample connected to a CTD rosette" />
+        </figure>
+        <figure>
+          <img loading="lazy" src="../images/blog/spot-august-2026/PXL_20260812_171805061.jpg" alt="A researcher collecting seawater from a CTD rosette" />
+        </figure>
+        <figure>
+          <img loading="lazy" src="../images/blog/spot-august-2026/PXL_20260812_172812085.jpg" alt="Peristaltic pumps, sample bottles, and filtration tubing on deck" />
+        </figure>
+        <figure>
+          <img loading="lazy" src="../images/blog/spot-august-2026/PXL_20260812_172816464.jpg" alt="The seawater filtration station aboard the research vessel" />
+        </figure>
+        <figure>
+          <img loading="lazy" src="../images/blog/spot-august-2026/PXL_20260812_180644858.jpg" alt="Researchers working with oceanographic equipment under a blue sky" />
+        </figure>
+      </div>
+    </article>
   </main>
 
   <footer class="site-footer">

@@ -769,6 +769,55 @@ pre {
   font-family: var(--serif);
   font-size: 1.25rem;
 }
+.blog-post-header .page-hero-inner { padding-block: clamp(76px, 10vw, 126px); }
+.blog-post-header h1 {
+  max-width: 1050px;
+  margin-bottom: 0;
+  font-size: clamp(2.7rem, 6vw, 6rem);
+}
+.blog-post { padding-top: clamp(48px, 7vw, 82px); }
+.blog-feature-image { margin: 0; }
+.blog-feature-image img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+.blog-feature-image figcaption {
+  margin-top: 11px;
+  color: var(--muted);
+  font-size: 0.76rem;
+  text-align: right;
+}
+.blog-post-prose {
+  max-width: 780px;
+  margin: clamp(58px, 8vw, 94px) auto;
+}
+.blog-post-prose p {
+  margin: 0 0 28px;
+  font-family: var(--serif);
+  font-size: clamp(1.12rem, 1.8vw, 1.4rem);
+  line-height: 1.65;
+}
+.blog-post-prose h2 {
+  margin: clamp(58px, 7vw, 82px) 0 28px;
+  font-size: clamp(2.1rem, 4vw, 3.8rem);
+}
+.blog-photo-grid {
+  columns: 2;
+  column-gap: 16px;
+  padding-top: clamp(12px, 3vw, 36px);
+  border-top: 1px solid var(--ink);
+}
+.blog-photo-grid figure {
+  break-inside: avoid;
+  margin: 0 0 16px;
+}
+.blog-photo-grid img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
 
 @media (max-width: 1040px) {
   .site-nav { gap: 12px; font-size: 0.65rem; }
@@ -835,6 +884,7 @@ pre {
   .tutorial-nav { grid-template-columns: 1fr; }
   .explorer-controls { grid-template-columns: 1fr; }
   .abundance-legend { flex-wrap: wrap; }
+  .blog-photo-grid { columns: 1; }
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
