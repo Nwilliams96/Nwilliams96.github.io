@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UniCon-IGS — Universal Amplicon Pipeline Configuration</title>
+  <link rel="canonical" href="https://www.nathanlrwilliams.com/UniCon-IGS/" />
+  <script src="js/canonical-route.js"></script>
+  <link rel="stylesheet" href="css/style.css?v=full-width-note-20260804" />
+  <script defer src="js/jszip.min.js"></script>
+  <script defer src="js/amt29-test-data.js?v=20261105"></script>
+  <script defer src="js/script.js?v=amt29-test-20261105"></script>
+</head>
+<body>
+  <div class="progress-wrap" aria-hidden="true"><div class="progress" id="progress"></div></div>
+
+  <header class="site-header">
+    <div class="site-header__inner">
+      <div class="site-title-wrap">
+        <h1>UniCon-IGS — Universal Amplicon Pipeline Configuration</h1>
+        <p class="site-subtitle">Created by Jesse McNichol and Nathan LR Williams.</p>
+      </div>
+
+      <nav class="section-nav" aria-label="Page sections">
+        <a href="#overview">Overview</a>
+        <a href="#getting-started">Getting Started</a>
+        <a href="#config">Config</a>
+        <a href="#samples">Sample File</a>
+        <a href="#amplicon">Amplicon Concentrations</a>
+        <a id="standardsNavLink" href="#standards">Internal Standards</a>
+        <a href="#export">Export</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page">
+    <section class="card intro" id="overview">
+      <div class="welcome-layout">
+        <div class="welcome-copy">
+          <h2>Welcome to UniCon-IGS</h2>
+          <p>
+            Welcome to the universal amplicon pipeline configuration and setup workflow. This workflow helps you go from
+            demultiplexed amplicon FASTQ files to a ready-to-run Snakemake configuration package.
+          </p>
+          <p>
+            The pipeline was designed around the 515F/926R universal primer pair, but it can be used with other amplicon
+            primers provided the primer section is filled out correctly. It supports 16S and 18S reads, internal standards,
+            and the metadata needed to generate the final files.
+          </p>
+          <p>
+            Use the sections below in order, then download the generated setup package when you are finished.
+            The latest tested workflow is available in the
+            <a class="requirement-link" href="https://github.com/Nwilliams96/UniCon-IGS" target="_blank" rel="noopener">pipeline repository on GitHub</a>.
+          </p>
+        </div>
+        <div class="welcome-artwork">
+          <img class="welcome-logo" src="images/unicon-combined-transparent.png" alt="UniCon unicorn and graffiti-style wordmark" width="1504" height="1046" />
+        </div>
+      </div>
+
+      <div class="preamble">
+        <h3>Why use a universal SSU rRNA primer set?</h3>
+        <p>
+          Metabarcoding using SSU rRNA as a marker gene is a powerful technique for profiling biological communities.
+          Metabarcoding studies can be separated roughly into three groups:
+        </p>
+        <ol>
+          <li>Studies of the “microbiome”—Bacteria and Archaea.</li>
+          <li>Studies of microbial Eukarya, including phytoplankton and heterotrophic protists.</li>
+          <li>Studies of macroscopic Eukarya, such as animals and plants.</li>
+        </ol>
+        <p>
+          The first group tends to use 16S SSU rRNA as a marker gene, while the second and third groups use 18S.
+          PCR primer design has followed this division, with many primer sets targeting one group while
+          discriminating against another.
+        </p>
+        <p>
+          However, 16S and 18S are, in evolutionary terms, the same molecule. SSU rRNA primers can therefore target
+          both 16S and 18S in a single PCR assay. This is not two primer sets: one forward and one reverse primer
+          amplify 16S from Archaea, Bacteria, chloroplasts, and mitochondria alongside eukaryotic nuclear 18S in the
+          same tube.
+        </p>
+        <p>
+          That this is possible is remarkable. It shows that regions of the SSU rRNA molecule have remained
+          sufficiently conserved across approximately 3.5 billion years of evolutionary history to amplify
+          organisms as different as bacteria, chloroplasts, protists, and jellyfish.
+        </p>
+
+        <h3>Two example sequence pools</h3>
+        <p>
+          The first dataset comes from DNA extracted from 1 L of whole Pacific Ocean seawater filtered on a
+          0.2 µm Sterivex filter. It contains material ranging from prokaryotes and microbial eukaryotes to fragments,
+          larvae, or propagules from animals.
+        </p>
+        <figure class="preamble-figure">
+          <img
+            src="images/220902_122853_LJ-GRADIENTS-samples-trace.png"
+            alt="LJ-Gradients sequence pool trace with a large 16S peak at 539 base pairs and a smaller 18S peak at 707 base pairs"
+            loading="lazy"
+          />
+          <figcaption>
+            A large peak at 539 bp represents 16S from Bacteria, Archaea, plastids, and mitochondria. The smaller
+            peak at 707 bp represents 18S from protists, metazoa, picoeukaryotes, and other eukaryotes.
+          </figcaption>
+        </figure>
+        <p>
+          The second dataset comes from the same region of the Pacific Ocean, but larger organisms were concentrated
+          with a net tow. Most of the DNA therefore comes from animals, protists, and other microeukaryotes.
+        </p>
+        <figure class="preamble-figure">
+          <img
+            src="images/220902_122853_NM-GRADIENTS-samples-trace.png"
+            alt="NM-Gradients sequence pool trace with a small 16S peak at 546 base pairs and a large 18S peak at 736 base pairs"
+            loading="lazy"
+          />
+          <figcaption>
+            The pattern is reversed: the 16S peak at 546 bp is small, while the 18S peak at 736 bp is large. Both
+            datasets were amplified with the same primer set and procedure.
+          </figcaption>
+        </figure>
+
+        <h3>Why this pipeline is needed</h3>
+        <p>
+          One reason this approach has not been used more commonly is the mismatch between sequencing read lengths
+          and amplicon lengths. The primers this pipeline was designed for bind at SSU rRNA coordinates 515 and 926
+          using <em>E. coli</em> as a reference. The resulting bacterial amplicon is approximately 411 bp, although
+          its exact length varies among organisms. Archaeal amplicons are approximately the same length.
+        </p>
+        <aside class="note">
+          Other universal primer combinations can also work. Another universal binding location is 1392, allowing
+          primer combinations such as 926F/1392R or 515F/1392R.
+        </aside>
+        <p>
+          In Eukarya, the corresponding primer coordinates are 562 and 1150 in <em>S. cerevisiae</em>, producing an
+          amplicon of approximately 588 bp. Although 18S length varies across evolutionary and ecological groups,
+          eukaryotic amplicons are about 177 bp longer than prokaryotic amplicons on average.
+        </p>
+        <p>
+          Modern Illumina sequencing has a maximum paired-end read length of 300 bp, and low-quality bases—especially
+          in the reverse read—must often be trimmed. The remaining forward and reverse reads usually overlap for 16S,
+          but not for 18S. Most conventional amplicon pipelines require that overlap and consequently discard 18S
+          reads from 515Y/926R data.
+        </p>
+        <p>
+          Based on an initial prototype by <a href="https://astrobiomike.github.io/" target="_blank" rel="noopener">Mike Lee</a>,
+          Jesse McNichol refined a method for separating 16S and 18S reads in silico, and the pipeline grew from
+          there. Yi-Chun Yeh, Melody Aleman, and Colette Fletcher-Hoppe have since made important contributions,
+          many inspired by Jed Fuhrman’s ideas.
+        </p>
+        <h3 id="test-dataset">Test Dataset</h3>
+        <p>
+          Try UniCon-IGS with ten surface-seawater DNA samples from the 2019 Atlantic Meridional Transect
+          (AMT29): <code>AMT29_02</code> through <code>AMT29_11</code>. These paired-end 515Y/926R reads
+          include bacterial, archaeal and eukaryotic SSU amplicons and were prepared with BP, DR and TT
+          genomic internal standards. The public archive is
+          <a class="requirement-link" href="https://www.ebi.ac.uk/ena/browser/view/PRJNA1226253" target="_blank" rel="noopener">BioProject PRJNA1226253</a>;
+          the dataset is described by
+          <a class="requirement-link" href="https://doi.org/10.1093/ismeco/ycaf131" target="_blank" rel="noopener">Bei et al. (2025)</a>.
+        </p>
+        <p>
+          The download is approximately <strong>537 MB</strong>: 20 compressed FASTQs, one R1 and one R2
+          for each sample. Run these commands in Terminal on your computer or HPC, from the parent directory
+          where you will clone your project. The downloader checks every file against the archive checksum,
+          resumes partial downloads, reuses verified files, and refuses to overwrite conflicting files.
+        </p>
+        <div class="code-panel">
+          <div class="code-panel__bar">
+            <span>Download the ten AMT29 samples</span>
+            <button class="copy-btn" data-copy="#testDownloadCode">Copy</button>
+          </div>
+          <pre id="testDownloadCode">curl --fail --location --retry 5 \
+  https://www.nathanlrwilliams.com/UniCon-IGS/downloads/download-AMT29-test.sh \
+  --output download-AMT29-test.sh
+bash download-AMT29-test.sh "$PWD/AMT29-test-data"</pre>
+        </div>
+        <p>
+          These ten samples are already loaded in the <a class="requirement-link" href="#samples">Sample File table</a>,
+          with their dates, coordinates, depths, SRA accessions, individual spike-in masses and 1 L normalization.
+          You can also <a class="requirement-link" href="data/AMT29-test-samples.tsv" download>download their samples.tsv</a>.
+          With the project clone beside the downloaded data folder, use <code>../AMT29-test-data</code> as
+          the raw-data location and keep the <code>.R1.fastq.gz</code> / <code>.R2.fastq.gz</code> endings.
+          Replace the sample rows and paths when using your own dataset.
+        </p>
+        <aside class="note">
+          For this dataset, enable internal-standard correction if you want to test that module, and keep the
+          BP/DR/TT definitions and recorded per-sample amounts. Leave the option off for your own samples if no
+          genomic standards were added. The amplicon-molarity fields below contain illustrative values, not
+          measured AMT29 pool concentrations; supply the appropriate measurements before interpreting
+          16S/18S-corrected abundances quantitatively.
+        </aside>
+      </div>
+    </section>
+
+    <section class="card" id="getting-started">
+      <div class="section-kicker">Step 1 • Getting started</div>
+      <h2>Repository and software setup</h2>
+      <p>
+        Install the required software, then enter your project name in the repository section below. This one name is
+        used for the cloned directory, configuration, result filenames, and final Results-Export folder. Use a
+        different name for each analysis so its configuration, logs, and results stay together.
+      </p>
+
+      <h3>Install the requirements</h3>
+      <p>
+        Install <a class="requirement-link" href="https://git-scm.com/downloads" target="_blank" rel="noopener">Git</a> and
+        <a class="requirement-link" href="https://docs.conda.io/projects/conda/en/stable/user-guide/install/" target="_blank" rel="noopener">Conda</a>
+        before continuing. The
+        <a class="requirement-link" href="https://snakemake.readthedocs.io/en/latest/getting_started/installation.html" target="_blank" rel="noopener">official Snakemake installation guide</a>
+        recommends a Conda-based installation. Administrator access is not normally required when Conda is installed in your user directory.
+      </p>
+
+      <p>Install Conda first, then run these commands in your terminal.</p>
+
+      <div class="code-panel">
+        <div class="code-panel__hint">After Conda is available, create the small controller environment used to launch the workflow. The pipeline-specific environments are created automatically during the first run.</div>
+        <div class="code-panel__bar">
+          <span>Install Snakemake</span>
+          <button class="copy-btn" data-copy="#install-code">Copy</button>
+        </div>
+        <pre id="install-code">conda create --name snakemake --channel conda-forge --channel bioconda snakemake
+conda activate snakemake
+snakemake --version</pre>
+      </div>
+
+      <div class="repository-setup">
+        <h3>Clone the pipeline repository</h3>
+        <p>
+          Choose a project name for this analysis. The generated command clones the pipeline from the public
+          <a class="requirement-link" href="https://github.com/Nwilliams96/UniCon-IGS" target="_blank" rel="noopener">pipeline repository</a>
+          into a directory with that project name and then moves into it. You will not need to enter the project name again.
+        </p>
+        <div class="field-group">
+          <label for="projectName">Project name</label>
+          <input id="projectName" type="text" value="AMT29-analysis" pattern="[A-Za-z0-9._-]+" />
+          <div class="hint">This will also be the directory name. Use letters, numbers, periods, underscores, or hyphens.</div>
+        </div>
+
+        <div class="code-panel">
+          <div class="code-panel__hint">Copy and run this command from the parent directory where you want the new project directory to be created. HTTPS cloning does not require a GitHub SSH key and is recommended when you only need to download and run the pipeline.</div>
+          <div class="code-panel__bar">
+            <span>Clone into your project directory</span>
+            <button class="copy-btn" data-copy="#clone-code">Copy</button>
+          </div>
+          <pre id="clone-code">git clone https://github.com/Nwilliams96/UniCon-IGS.git AMT29-analysis
+cd AMT29-analysis</pre>
+        </div>
+      </div>
+
+    </section>
+
+    <section class="card" id="config">
+      <div class="section-kicker">Step 2 • Config</div>
+      <h2>Config.yml</h2>
+      <p>Fill these fields to generate the <code>config/config.yml</code> file used by the Snakemake workflow.</p>
+
+      <div class="panel-grid">
+        <div class="stack">
+          <h3>Reference databases</h3>
+          <p class="small-muted">Choose independently how to obtain SILVA and PR2 classifiers. Completed compatible databases can be reused across projects. BBsplit, which separates 16S and 18S reads, has its own setting below.</p>
+        </div>
+        <div class="toggle-row">
+          <input id="haveBbsplitDatabase" type="checkbox" />
+          <label for="haveBbsplitDatabase">BBsplit 16S/18S database is already available</label>
+        </div>
+        <div id="dbBlock" class="field-group">
+          <strong id="databaseModeTitle">BBsplit and supporting reference location</strong>
+          <label for="database_dir">BBsplit and supporting reference storage directory</label>
+          <input id="database_dir" type="text" value="/project2/fuhrman_1138/databases/eASV-Snakemake/databases/" />
+          <div id="databaseModeDescription" class="hint">BBsplit will be downloaded and built under this shared path. Supporting references, including the separate SILVA 144 exact-species reference, are also stored here.</div>
+          <div class="hint">Keep database directories outside the project clone so future projects can reuse them. A reusable classifier may be read from another location without writing beside it.</div>
+        </div>
+
+        <div class="stack" aria-labelledby="silvaDatabaseHeading">
+          <h3 id="silvaDatabaseHeading">SILVA classifier</h3>
+          <div class="field-group">
+            <label for="silvaDatabaseMode">How should SILVA be obtained?</label>
+            <select id="silvaDatabaseMode">
+              <option value="existing" selected>Use existing databases</option>
+              <option value="download">Download pre-trained database</option>
+              <option value="train">Train database with RESCRIPt</option>
+            </select>
+            <label for="silvaVersion">SILVA reference version</label>
+            <input id="silvaVersion" type="text" value="144" />
+            <div class="hint">Enter the release represented by your classifier or reference. A URL or filename alone does not verify its release.</div>
+          </div>
+          <div id="silvaExistingFields" class="field-group">
+            <label for="silvaClassifier">Existing SILVA classifier path (.qza)</label>
+            <input id="silvaClassifier" type="text" value="/project2/fuhrman_1138/databases/eASV-Snakemake/databases/classification/SILVA/SILVA_144_SSURef_NR99_uniform_classifier_V4V5-515f-926r.qza" />
+            <div class="hint">The pipeline validates and reads this exact file; it does not download or train a replacement.</div>
+          </div>
+          <div id="silvaDownloadFields" class="field-group hidden">
+            <label for="silvaDownloadLink">Pre-trained SILVA classifier URL</label>
+            <input id="silvaDownloadLink" type="url" value="https://www.arb-silva.de/fileadmin/silva_databases/release_144/QIIME2/2026.7/SSU/V4V5-515f-926r/uniform/SILVA_144_SSURef_NR99_uniform_classifier_V4V5-515f-926r.qza" />
+            <div class="hint">Use a TaxonomicClassifier .qza compatible with your QIIME 2 environment and intended analysis. The official SILVA 144 preset follows the primer selection; a custom URL is kept exactly as entered.</div>
+          </div>
+          <div id="silvaTrainingFields" class="field-group hidden">
+            <div class="hint">RESCRIPt downloads the selected reference release, then the separate preparation rules train a classifier. Primer-region training is the default; advanced users can set <code>silva_reference_mode: "full_length"</code> in config.yml.</div>
+            <div id="silvaTrainingWarning" class="notice">The supplied RESCRIPt environment cannot yet download SILVA 144 for training. Use the pre-trained 144 download, select a supported older release, or supply an environment that supports your chosen release. You can still generate this configuration.</div>
+          </div>
+          <div id="silvaDestinationFields" class="field-group hidden">
+            <label id="silvaDatabaseDirLabel" for="silvaDatabaseDir">SILVA download destination directory</label>
+            <input id="silvaDatabaseDir" type="text" value="/project2/fuhrman_1138/databases/eASV-Snakemake/databases/classification/SILVA" />
+            <div class="hint">Store the completed classifier outside this project clone so future projects can reuse it.</div>
+          </div>
+        </div>
+
+        <div class="stack" aria-labelledby="pr2DatabaseHeading">
+          <h3 id="pr2DatabaseHeading">PR2 classifier</h3>
+          <div class="field-group">
+            <label for="pr2DatabaseMode">How should PR2 be obtained?</label>
+            <select id="pr2DatabaseMode">
+              <option value="existing" selected>Use existing databases</option>
+              <option value="download">Download pre-trained database</option>
+              <option value="train">Train database with RESCRIPt</option>
+            </select>
+            <label for="pr2Version">PR2 reference version</label>
+            <input id="pr2Version" type="text" value="5.1.1" />
+            <div class="hint">Enter the release represented by your classifier or the reference release you wish to download and train.</div>
+          </div>
+          <div id="pr2ExistingFields" class="field-group">
+            <label for="pr2Classifier">Existing PR2 classifier path (.qza)</label>
+            <input id="pr2Classifier" type="text" value="/project2/fuhrman_1138/databases/eASV-Snakemake/databases/classification/PR2/pr2_version_5.1.1_SSU_dada2.clean.culled.derep-sliced_GTGYCAGCMGCCGCGGTAA_CCGYCAATTYMTTTRAGTTT_dereplicated_final_classifier_qiime2-2026.7.qza" />
+            <div class="hint">The pipeline validates and reads this exact file; it does not download or train a replacement.</div>
+          </div>
+          <div id="pr2DownloadFields" class="field-group hidden">
+            <label for="pr2DownloadLink">Pre-trained PR2 classifier URL</label>
+            <input id="pr2DownloadLink" type="url" placeholder="https://example.org/PR2.classifier.qza" />
+            <div class="hint">Use a TaxonomicClassifier .qza compatible with your QIIME 2 environment and intended analysis. The declared release is recorded in the report.</div>
+          </div>
+          <div id="pr2TrainingFields" class="field-group hidden">
+            <div class="hint">RESCRIPt downloads the selected reference release, then the separate preparation rules train a classifier. Primer-region training is the default; advanced users can set <code>pr2_reference_mode: "full_length"</code> in config.yml.</div>
+          </div>
+          <div id="pr2DestinationFields" class="field-group hidden">
+            <label id="pr2DatabaseDirLabel" for="pr2DatabaseDir">PR2 trained classifier destination directory</label>
+            <input id="pr2DatabaseDir" type="text" value="/project2/fuhrman_1138/databases/eASV-Snakemake/databases/classification/PR2" />
+            <div class="hint">Store the completed classifier outside this project clone so future projects can reuse it.</div>
+          </div>
+        </div>
+
+        <div class="stack">
+          <h3>Shared Conda environment directory</h3>
+        </div>
+        <div class="field-group">
+          <label for="conda_envs_dir">Directory path</label>
+          <input id="conda_envs_dir" type="text" value="/project2/fuhrman_1138/Project_Nathan_Williams/eASV-conda-envs" />
+          <div class="hint">Keep this outside the project clone. Snakemake checks this shared directory and reuses every completed rule environment whose definition has not changed. It creates only missing or updated environments, so future project clones do not reinstall the same software.</div>
+        </div>
+
+        <div class="stack">
+          <h3>Raw data location</h3>
+        </div>
+        <div class="field-group">
+          <label for="rawdatadir">FASTQ directory path</label>
+          <input id="rawdatadir" type="text" value="../AMT29-test-data" />
+          <div class="hint">Enter the directory containing the FASTQ files. A trailing slash is optional.</div>
+        </div>
+
+        <div class="stack">
+          <h3>FASTQ file endings</h3>
+        </div>
+        <div class="two-col">
+          <div class="field-group">
+            <label for="R1file_ending">R1 file ending</label>
+            <input id="R1file_ending" type="text" value=".R1.fastq.gz" />
+          </div>
+          <div class="field-group">
+            <label for="R2file_ending">R2 file ending</label>
+            <input id="R2file_ending" type="text" value=".R2.fastq.gz" />
+          </div>
+        </div>
+
+        <div class="toggle-row">
+          <input id="intstdToggle" type="checkbox" />
+          <label for="intstdToggle">Did you add genomic internal standards?</label>
+        </div>
+
+        <aside class="critical-warning" role="alert">
+          <strong>Only check this box if genomic internal standards were physically added to your samples.</strong>
+          If internal-standard correction is enabled without internal standards in the samples, the required ISD
+          sequences and recovery values cannot be produced and the pipeline will not finish. Leave the box unchecked
+          for datasets that do not contain internal standards.
+        </aside>
+
+        <div id="intstdBlock" class="stack">
+          <aside class="note">BP, DR, and TT are preloaded as a convenient starting preset using our commonly used copy numbers, genome lengths, and full SSU rRNA gene sequences. Every value remains editable, and 16S or 18S whole-genome standards can be renamed, removed, or added.</aside>
+          <div class="hint">Add one row for every internal standard used. These exact names become the <code>&lt;name&gt;_ng</code> sample columns and are printed in the recovery-plot legend and correction-method labels.</div>
+          <div id="intstdNamesWrap" class="standard-names-wrap"></div>
+          <div class="actions compact-actions">
+            <button class="primary" type="button" data-add-standard>+ Add internal standard</button>
+          </div>
+          <div class="hint">Use letters, numbers, periods, underscores, or hyphens. Select <strong>Remove</strong> beside any unused preset so the list matches the standards you actually added. At least one standard is retained while correction is enabled. The same ordered list is used in the sample columns, internal-standard table, correction plots, and report.</div>
+
+          <div id="standards" class="stack">
+            <h3>Internal standard information</h3>
+            <p>Enter the SSU rRNA copy number, whole-genome length, and complete 16S or 18S SSU rRNA gene sequence for every named standard. The pipeline automatically creates the concatenated reference needed to recognize an 18S standard after R1 and R2 processing.</p>
+            <p class="small-muted">BP, DR, and TT are prefilled from the common preset. If you rename one, its preset definition is cleared so it cannot be mistaken for the newly named standard.</p>
+            <aside class="note">
+              <code>internal_stds.tsv</code> stores the definition that does not change between samples: the name,
+              SSU rRNA copy number, whole-genome length, and SSU rRNA gene sequence. <code>samples.tsv</code> stores what did change by
+              sample. The amount actually added can differ among samples:
+              enter that mass in nanograms in each sample's matching <code>&lt;standard-name&gt;_ng</code> column.
+              The normalization factor and unit also belong in the sample file; examples include volume filtered in
+              litres or soil extracted in grams. If a standard was not added to a particular sample, leave its cell
+              blank; do not type <code>NA</code>, <code>na</code>, or another placeholder.
+            </aside>
+            <div id="standardsWrap" class="standards-wrap"></div>
+            <button
+              class="secondary preview-toggle"
+              type="button"
+              aria-expanded="false"
+              aria-controls="standardsPreviewPanel"
+              data-preview-target="standardsPreviewPanel"
+            >Preview internal_stds.tsv</button>
+            <div class="code-panel hidden" id="standardsPreviewPanel">
+              <div class="code-panel__bar">
+                <span>internal_stds.tsv preview</span>
+                <button class="copy-btn" data-copy="#standardsPreview">Copy</button>
+              </div>
+              <pre id="standardsPreview"></pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="stack">
+          <h3>18S pre-concatenation read-length controls</h3>
+          <p class="small-muted">These lengths apply only to the 18S path, where R1 and R2 are trimmed before being concatenated. Paired 16S reads are no longer truncated to a fixed length; DADA2 receives their full post-primer-removal lengths.</p>
+        </div>
+
+        <div class="two-col">
+          <div class="field-group">
+            <label for="truncR1">18S forward length before concatenation</label>
+            <input id="truncR1" type="number" min="0" step="1" value="220" />
+            <div class="hint">Number of forward-read bases retained only for the concatenated 18S analysis. Reads shorter than this are discarded from that path.</div>
+          </div>
+          <div class="field-group">
+            <label for="truncR2">18S reverse length before concatenation</label>
+            <input id="truncR2" type="number" min="0" step="1" value="180" />
+            <div class="hint">Number of reverse-read bases retained only for the concatenated 18S analysis.</div>
+          </div>
+        </div>
+
+        <div class="stack">
+          <h3>16S DADA2 controls (paired reads)</h3>
+          <p class="small-muted">The default 16S fixed truncation lengths are both 0, so DADA2 receives the complete post-primer-removal forward and reverse reads. Expected-error filtering, quality-score truncation, merging, and chimera removal still apply.</p>
+        </div>
+
+        <div class="two-col">
+          <div class="field-group">
+            <label for="prokMaxEeF">Maximum expected errors — forward (<code>max_ee_f</code>)</label>
+            <input id="prokMaxEeF" type="number" min="0" step="0.1" value="2" />
+            <div class="hint">Forward reads above this expected-error total are discarded. Raising it retains more lower-quality reads but can increase erroneous ASVs.</div>
+          </div>
+          <div class="field-group">
+            <label for="prokMaxEeR">Maximum expected errors — reverse (<code>max_ee_r</code>)</label>
+            <input id="prokMaxEeR" type="number" min="0" step="0.1" value="2" />
+            <div class="hint">Reverse-read equivalent of the forward threshold. Reverse reads often decline in quality sooner, so inspect filtering and merging losses when adjusting it.</div>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div class="field-group">
+            <label for="prokTruncQ">Quality truncation threshold</label>
+            <input id="prokTruncQ" type="number" min="0" step="1" value="2" />
+            <div class="hint">A read is cut at the first base with a Phred score at or below this value. Raising it trims sooner and may cause more reads to fail the selected lengths.</div>
+          </div>
+          <div class="field-group">
+            <label for="prokMinOverlap">Minimum pair overlap</label>
+            <input id="prokMinOverlap" type="number" min="4" step="1" value="12" />
+            <div class="hint">Minimum matching overlap required to merge denoised forward and reverse reads. Lowering it may rescue pairs but reduces merging confidence.</div>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div class="field-group">
+            <label for="prokPooling">Pooling method</label>
+            <select id="prokPooling">
+              <option value="independent" selected>Independent (current preset)</option>
+              <option value="pseudo">Pseudo-pooling</option>
+            </select>
+            <div class="hint">Independent infers each sample separately. Pseudo-pooling performs a second pass informed by ASVs seen in multiple samples and can improve sensitivity to rare recurring variants, with extra compute.</div>
+          </div>
+          <div class="field-group">
+            <label for="prokChimera">Chimera method</label>
+            <select id="prokChimera">
+              <option value="consensus" selected>Consensus (current preset)</option>
+              <option value="pooled">Pooled</option>
+              <option value="none">None</option>
+            </select>
+            <div class="hint">Consensus detects chimeras per sample and combines the evidence. Pooled uses all samples together. None is useful only as a diagnostic because biological chimeras will remain.</div>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div class="field-group">
+            <label for="prokMinFold">Minimum parent-abundance fold</label>
+            <input id="prokMinFold" type="number" min="1" step="0.1" value="1" />
+            <div class="hint">Potential chimera parents must be at least this many times more abundant than the tested sequence. Raising it is less aggressive and can retain more variants, including possible chimeras.</div>
+          </div>
+          <div class="field-group">
+            <label for="prokNReadsLearn">Reads used to learn errors</label>
+            <input id="prokNReadsLearn" type="number" min="1" step="1" value="1000000" />
+            <div class="hint">Number of reads used to train DADA2's error model. More reads may stabilize the model for large or diverse datasets but require more time and memory.</div>
+          </div>
+        </div>
+
+        <div class="stack">
+          <h3>18S DADA2 controls (concatenated reads)</h3>
+          <p class="small-muted">The 18S path concatenates trimmed R1 and R2 and then runs single-end DADA2, so it has no paired-read overlap setting.</p>
+        </div>
+
+        <div class="two-col">
+          <div class="field-group">
+            <label for="eukMaxEe">Maximum expected errors (<code>max_ee</code>)</label>
+            <input id="eukMaxEe" type="number" min="0" step="0.1" value="2" />
+            <div class="hint">Concatenated reads above this expected-error total are discarded. Raising it retains more reads but can increase erroneous ASVs.</div>
+          </div>
+          <div class="field-group">
+            <label for="eukTruncQ">Quality truncation threshold</label>
+            <input id="eukTruncQ" type="number" min="0" step="1" value="0" />
+            <div class="hint">The current value of 0 disables quality-based truncation inside DADA2 because the component reads were already length-trimmed before concatenation.</div>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div class="field-group">
+            <label for="eukPooling">Pooling method</label>
+            <select id="eukPooling">
+              <option value="independent" selected>Independent (current preset)</option>
+              <option value="pseudo">Pseudo-pooling</option>
+            </select>
+            <div class="hint">Pseudo-pooling can improve sensitivity to rare variants that recur across samples, but runs an additional inference pass.</div>
+          </div>
+          <div class="field-group">
+            <label for="eukChimera">Chimera method</label>
+            <select id="eukChimera">
+              <option value="consensus" selected>Consensus (current preset)</option>
+              <option value="pooled">Pooled</option>
+              <option value="none">None</option>
+            </select>
+            <div class="hint">Controls how concatenated 18S chimeras are identified. Disabling this is intended for diagnostics, not a final biological result.</div>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div class="field-group">
+            <label for="eukMinFold">Minimum parent-abundance fold</label>
+            <input id="eukMinFold" type="number" min="1" step="0.1" value="1" />
+            <div class="hint">Higher values make chimera classification less aggressive and may retain both genuine low-abundance variants and unwanted chimeras.</div>
+          </div>
+          <div class="field-group">
+            <label for="eukNReadsLearn">Reads used to learn errors</label>
+            <input id="eukNReadsLearn" type="number" min="1" step="1" value="1000000" />
+            <div class="hint">Number of concatenated reads used for error-model training. Larger values increase training work and may help very large datasets.</div>
+          </div>
+        </div>
+
+        <div class="stack">
+          <h3>Primer sequences</h3>
+          <p class="small-muted">Enter the primer sequences that are still attached to the raw reads. Cutadapt uses these values to identify and remove primers before BBsplit and DADA2.</p>
+        </div>
+
+        <div class="two-col">
+          <div class="field-group">
+            <label for="fwdPrimer">Forward primer</label>
+            <input id="fwdPrimer" type="text" value="GTGYCAGCMGCCGCGGTAA" />
+          </div>
+          <div class="field-group">
+            <label for="revPrimer">Reverse primer</label>
+            <input id="revPrimer" type="text" value="CCGYCAATTYMTTTRAGTTT" />
+          </div>
+        </div>
+
+        <div class="stack">
+          <h3>QIIME 2 environment</h3>
+          <p class="small-muted">Provide a QIIME 2 environment YAML path or an installed Conda environment name. This environment runs DADA2, taxonomy classification, and QIIME 2 artifact processing. The supplied QIIME 2 2026.7 definition is compatible with the official SILVA 144 classifier used by the pipeline. The classifier assigns Domain through Genus; the pipeline then adds a provisional Species label only for an unambiguous exact SILVA 144 sequence match whose genus agrees with that assignment. Unmatched or ambiguous ASVs remain blank at Species.</p>
+        </div>
+
+        <aside class="note" id="qiimeCompatibilityNotice">
+          <strong>Check QIIME 2 and scikit-learn compatibility with your chosen classifiers.</strong>
+          For existing or downloaded SILVA and PR2 classifiers, use a compatible QIIME 2 release and
+          the same scikit-learn version used to train each classifier. Check the classifier provider's
+          requirements: this pipeline uses one QIIME 2 environment for both databases, so it must
+          support both classifiers. A matching Conda environment name alone does not guarantee compatibility.
+          <p><code>qiime2version</code> accepts either an environment-definition YAML path
+          (<code>.yaml</code> or <code>.yml</code>) or an already installed Conda environment name
+          (for example, <code>qiime2-2026.7</code>). Enter a definition or an installed name, not just a release number.</p>
+          <p><strong>YAML:</strong> with <code>--use-conda</code>, Snakemake identifies its managed
+          environments by a hash of the definition. A completed matching environment in your configured
+          shared <code>conda_envs_dir</code> is reused, not recreated. Snakemake does not scan arbitrary
+          installed environments and compare their packages against the YAML.</p>
+          <p><strong>If the environment is not installed:</strong> the YAML file is an installation
+          recipe, not an installed environment. The file must exist, but Snakemake creates the matching
+          environment under <code>conda_envs_dir</code> when needed. Both supplied launch scripts enable
+          this with <code>--use-conda</code>. Conda and Snakemake must already be installed.</p>
+          <p><strong>Bundled and other QIIME 2 releases:</strong> newer environment definitions will be
+          added to the pipeline bundle through maintenance patches. To use an older or other unbundled
+          release, download the appropriate Linux environment YAML definition from QIIME 2, save it in
+          your cloned repository's <code>workflow/envs/</code> folder, and enter
+          <code>../envs/my-qiime-environment.yml</code> in the setting below, replacing the example
+          filename with your downloaded file's name. You can also supply an absolute YAML path.
+          The pipeline respects an explicitly selected definition; it does not automatically upgrade
+          older filenames. Changing releases does not guarantee compatibility with the current pipeline
+          commands, required plugins, or your classifiers: check these before running.</p>
+          <p><strong>Installed name:</strong> the environment must already exist and be accessible
+          through Conda on the machine running Snakemake. The pipeline resolves its exact location and
+          fingerprints its installed packages for classifier-cache tracking. It does not create the named
+          environment or verify that its packages meet a separate YAML specification. Training and
+          classification use the same selected environment.</p>
+          <p><strong>Sharing between multiple users:</strong> use the same pinned YAML definition and
+          the same shared <code>conda_envs_dir</code>, with appropriate filesystem permissions.
+          Create environments once before other users reuse them, and do not modify shared environments
+          while jobs are running. A name that exists for one user may not exist for another.</p>
+          <p><strong><a href="https://library.qiime2.org/data-resources" target="_blank" rel="noopener noreferrer">QIIME 2 classifier compatibility guidance</a></strong></p>
+        </aside>
+
+        <div id="qiimeBlock" class="field-group">
+          <label for="qiime2version">QIIME 2 environment: YAML path or installed name</label>
+          <input id="qiime2version" type="text" value="../envs/rachis-qiime2-linux-64-2026.7.yml" aria-describedby="qiimeCompatibilityNotice" />
+        </div>
+
+      </div>
+
+      <button
+        class="secondary preview-toggle"
+        type="button"
+        aria-expanded="false"
+        aria-controls="configPreviewPanel"
+        data-preview-target="configPreviewPanel"
+      >Preview config.yml</button>
+
+      <div class="code-panel hidden" id="configPreviewPanel">
+        <div class="code-panel__hint">Preview the generated config.yml file so you can verify the values before downloading the package.</div>
+        <div class="code-panel__bar">
+          <span>config.yml preview</span>
+          <button class="copy-btn" data-copy="#configPreview">Copy</button>
+        </div>
+        <pre id="configPreview"></pre>
+      </div>
+    </section>
+
+    <section class="card" id="samples">
+      <div class="section-kicker">Step 3 • Sample file</div>
+      <h2>Sample File</h2>
+      <p>
+        Enter the number of samples to create the table, then type directly or paste a block of cells copied from
+        Excel, Google Sheets, or equivalent software.
+      </p>
+      <aside class="note">
+        <strong>Sample-sheet rule:</strong> an uploaded TSV must contain the exact lowercase <code>sample</code>
+        column and, when internal standards are enabled, every configured
+        <code>&lt;standard-name&gt;_ng</code> column. All other columns are optional: they may be omitted, renamed,
+        reordered, or replaced with your own metadata columns. Leave cells blank when no data are available—do not
+        enter <code>0</code> or <code>NA</code> as missing-data placeholders. The pipeline runs only the samples listed
+        in this sheet; if a sample is not included, it will not be processed.
+      </aside>
+      <aside class="note">
+        When internal standards are enabled, enter the exact mass in nanograms added to each individual sample in
+        its <code>&lt;standard-name&gt;_ng</code> column. Enter the sample-specific normalization amount in
+        <code>internal_std_normalization_factor</code>—for example, litres of water filtered or grams of soil
+        extracted—and record the corresponding unit (such as <code>L</code> or <code>g</code>) in <code>units</code>.
+        The correction divides by this factor to report abundance per chosen unit.
+      </aside>
+
+      <div class="sample-count-control">
+        <div class="field-group">
+          <label for="sampleCount">Number of samples</label>
+          <input id="sampleCount" type="number" value="10" min="1" max="500" inputmode="numeric" />
+          <div class="hint">The table updates automatically. A spreadsheet range can be pasted starting in any cell.</div>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label for="extraSampleColumns">Additional sample metadata columns</label>
+        <input id="extraSampleColumns" type="text" value="replicate, condition, Depth (m), Longitude [degrees_east], Latitude [degrees_north], time, sra_run, biosample" placeholder="station, treatment, extraction_batch" />
+        <div class="hint">Optional. This list defines every metadata column besides <code>sample</code> and the internal-standard fields. Add, rename, or remove columns—including depth, latitude, and longitude—then apply the list. The chosen columns are preserved downstream and become filters in the HTML taxonomy report.</div>
+        <div class="actions compact-actions">
+          <button class="secondary" id="applyExtraSampleColumnsBtn" type="button">Apply metadata columns</button>
+        </div>
+        <p id="extraSampleColumnsStatus" class="small-muted">No additional columns configured.</p>
+      </div>
+
+      <div class="table-wrap" role="region" aria-label="Scrollable sample metadata table" tabindex="0">
+        <table class="sample-table">
+          <thead>
+            <tr id="sampleHeaderRow"></tr>
+          </thead>
+          <tbody id="sampleBody"></tbody>
+        </table>
+      </div>
+
+      <div class="actions">
+        <button class="primary" id="addSampleBtn" type="button">+ Add sample row</button>
+        <button class="secondary" id="removeSampleBtn" type="button">Remove last row</button>
+        <button class="secondary" id="downloadSampleCsvBtn" type="button">Download TSV template</button>
+        <button class="secondary" id="uploadSampleCsvBtn" type="button">Upload completed TSV</button>
+        <input class="hidden" id="sampleCsvUpload" type="file" accept=".tsv,text/tab-separated-values,text/plain" />
+      </div>
+      <p id="sampleCsvStatus" class="small-muted">Upload requires only <code>sample</code> and the configured internal-standard amount columns. Optional uploaded columns are retained, and omitted optional columns are left blank.</p>
+
+      <button
+        class="secondary preview-toggle"
+        type="button"
+        aria-expanded="false"
+        aria-controls="samplesPreviewPanel"
+        data-preview-target="samplesPreviewPanel"
+      >Preview samples.tsv</button>
+
+      <div class="code-panel hidden" id="samplesPreviewPanel">
+        <div class="code-panel__hint">Preview the samples.tsv file to make sure the columns and rows reflect the metadata you entered.</div>
+        <div class="code-panel__bar">
+          <span>samples.tsv preview</span>
+          <button class="copy-btn" data-copy="#samplesPreview">Copy</button>
+        </div>
+        <pre id="samplesPreview"></pre>
+      </div>
+    </section>
+
+    <section class="card" id="amplicon">
+      <div class="section-kicker">Step 4 • Amplicon molarities</div>
+      <h2>Amplicon Molarities</h2>
+      <p>
+        The 515F/926R primer pair targets both 16S and nuclear 18S rRNA. Unfortunately, there is a bias against 18S
+        sequences when 16S and 18S sequences are mixed. This is because the 16S and 18S amplicons have different
+        lengths (see the figures in the preamble) and are therefore sequenced at different rates, with a bias toward
+        the shorter amplicons.
+      </p>
+      <p>
+        To correct for this, fill out this section of the configuration with the amounts of 16S and 18S molecules in
+        the starting pool. These values can be obtained by running the pool on a TapeStation or Bioanalyzer, which
+        most sequencing cores perform as part of quality control. The pipeline treats these values as the starting
+        ratio, then calculates the ratio observed on the sequencing platform from the final 16S and 18S read counts.
+        It uses the difference to increase the estimated 18S abundance and decrease the estimated 16S abundance
+        accordingly.
+      </p>
+
+      <div class="two-col transfer-builder">
+        <div class="field-group">
+          <label for="amt16s">16S Amount (pM)</label>
+          <input id="amt16s" type="number" value="1000" step="0.1" />
+        </div>
+        <div class="field-group">
+          <label for="amt18s">18S Amount (pM)</label>
+          <input id="amt18s" type="number" value="1000" step="0.1" />
+        </div>
+      </div>
+
+      <button
+        class="secondary preview-toggle"
+        type="button"
+        aria-expanded="false"
+        aria-controls="ampliconPreviewPanel"
+        data-preview-target="ampliconPreviewPanel"
+      >Preview molarities file</button>
+
+      <div class="code-panel hidden" id="ampliconPreviewPanel">
+        <div class="code-panel__hint">Preview the amplicon molarities file to confirm the 16S and 18S values before export.</div>
+        <div class="code-panel__bar">
+          <span>prok_and_euk_SSU_amplicon_molarities.tsv preview</span>
+          <button class="copy-btn" data-copy="#ampliconPreview">Copy</button>
+        </div>
+        <pre id="ampliconPreview"></pre>
+      </div>
+    </section>
+
+    <section class="card" id="export">
+      <div class="section-kicker">Step 5 • Export</div>
+      <h2>Export</h2>
+      <p>Once everything is filled in, export the package you can upload into the Snakemake directory.</p>
+
+      <div class="code-panel">
+        <div class="code-panel__bar">
+          <span>Suggested folder structure</span>
+          <button class="copy-btn" data-copy="#folderPreview">Copy</button>
+        </div>
+        <pre id="folderPreview">config/
+  README.md
+  config.yml
+  samples.tsv
+  prok_and_euk_SSU_amplicon_molarities.tsv
+  internal_stds.tsv  # included when internal standards are enabled
+  schemas/
+    config.schema.yml
+    samples.schema.yml
+  setup-scripts/
+    setup-analysis-dir.sh</pre>
+      </div>
+
+      <div class="validation-card" id="validationCard">
+        <div class="validation-card__title">Final validation before download</div>
+        <ul id="validationList" class="validation-list"></ul>
+      </div>
+
+      <div class="actions">
+        <button class="primary" id="downloadPackageBtn" type="button">Download package</button>
+        <button class="secondary" id="copyCommandsBtn" type="button">Copy terminal commands</button>
+      </div>
+
+      <p id="exportStatus" class="small-muted">Your package will contain one complete <code>config/</code> folder, including the README, schemas, and setup script.</p>
+
+      <div class="two-col">
+        <div class="field-group">
+          <label for="transferInput">Input package path</label>
+          <input id="transferInput" type="text" value="~/Downloads/AMT29-analysis-config.zip" />
+          <div class="hint">Enter the path to the downloaded configuration ZIP on your computer.</div>
+        </div>
+        <div class="field-group">
+          <label for="transferOutput">Output directory</label>
+          <input id="transferOutput" type="text" placeholder="username@server.example.org:/full/path/to/project/" />
+          <div class="hint">For a remote server, use <code>username@hostname:/full/path/</code>. You can also enter a local directory.</div>
+        </div>
+      </div>
+
+      <div class="code-panel">
+        <div class="code-panel__hint">The command updates from the input and output paths above. Run it in Terminal on the computer that contains the downloaded ZIP.</div>
+        <div class="code-panel__bar">
+          <span>Copy the configuration package</span>
+          <button class="copy-btn" data-copy="#uploadConfigCode">Copy</button>
+        </div>
+        <pre id="uploadConfigCode">scp ~/Downloads/AMT29-analysis-config.zip &lt;OUTPUT_DESTINATION&gt;</pre>
+      </div>
+
+      <p>
+        If you prefer a graphical file-transfer program, upload the ZIP to the same project directory using
+        <a class="requirement-link" href="https://cyberduck.io/download/" target="_blank" rel="noopener">Cyberduck</a>
+        or
+        <a class="requirement-link" href="https://filezilla-project.org/" target="_blank" rel="noopener">FileZilla</a>.
+        Connect with SFTP using the hostname and login details supplied by your institution or server administrator.
+      </p>
+
+      <div class="code-panel">
+        <div class="code-panel__hint">After the ZIP reaches its destination, run these commands from inside the cloned project folder. The first creates the <code>config/</code> directory and the second refreshes every extracted config-file timestamp to prevent clock-skew errors on the compute system.</div>
+        <div class="code-panel__bar">
+          <span>Extract the configuration package</span>
+          <button class="copy-btn" data-copy="#extractConfigCode">Copy</button>
+        </div>
+        <pre id="extractConfigCode">unzip AMT29-analysis-config.zip
+find config -type f -exec touch {} +</pre>
+      </div>
+
+      <h3>Run the pipeline</h3>
+      <p>
+        Once you have downloaded the configuration package, transferred it to the cloned project, and extracted it
+        so that the <code>config/</code> directory is in the main project folder, activate the Snakemake environment
+        and run the included <code>run_snakemake.sh</code> script.
+      </p>
+      <div class="code-panel">
+        <div class="code-panel__hint">Run these commands from the main directory of your cloned project.</div>
+        <div class="code-panel__bar">
+          <span>Run run_snakemake.sh</span>
+          <button class="copy-btn" data-copy="#runPipelineCode">Copy</button>
+        </div>
+        <pre id="runPipelineCode">conda activate snakemake
+bash run_snakemake.sh</pre>
+      </div>
+      <p class="small-muted">
+        The included script is intentionally minimal. Depending on your HPC system, you may need to add the appropriate
+        executor and resource allocation settings, such as jobs, CPUs, memory, runtime, account, or partition. The script
+        uses the shared <code>conda_envs_dir</code> from <code>config/config.yml</code>; existing matching environments are
+        reused automatically, and only missing or changed environments are created.
+      </p>
+
+      <div class="code-panel">
+        <div class="code-panel__hint">After Snakemake finishes, download the <code>&lt;project-name&gt;-Results-Export/</code> folder. Its project-specific name prevents downloads from different runs being confused. It contains the formatted data tables, phylum and order summaries, and the self-contained HTML report.</div>
+        <div class="code-panel__bar">
+          <span>Final pipeline report</span>
+          <button class="copy-btn" data-copy="#reportPath">Copy</button>
+        </div>
+        <pre id="reportPath">AMT29-analysis-Results-Export/AMT29.pipeline-report.html</pre>
+      </div>
+
+      <div class="grump-cta">
+        <h3>Explore your ASV in GRUMP</h3>
+        <p>
+          If you used this pipeline with the same 515FY–926R primers and the same forward and reverse trim lengths
+          used for GRUMP, you can copy an ASV hash from your results and search for it in the GRUMP Explorer. The
+          explorer will show the ASV’s distribution across GRUMP samples.
+        </p>
+        <a
+          class="primary grump-cta__link"
+          href="https://nwilliams96.github.io/GRUMP/#explore-grump"
+          target="_blank"
+          rel="noopener"
+        >Search an ASV hash in GRUMP</a>
+      </div>
+    </section>
+  </main>
+
+  <script id="package-readme" type="text/plain">
+## Workflow overview
+
+This workflow is a best-practice workflow for `<detailed description>`.
+The workflow is built using [snakemake](https://snakemake.readthedocs.io/en/stable/) and consists of the following steps:
+
+1. Download genome reference from NCBI
+2. Validate downloaded genome (`python` script)
+3. Simulate short read sequencing data on the fly (`dwgsim`)
+4. Check quality of input read data (`FastQC`)
+5. Collect statistics from tool output (`MultiQC`)
+
+## Running the workflow
+
+### Input data
+
+This template workflow creates artificial sequencing data in `*.fastq.gz` format.
+It does not contain actual input data.
+The pipeline selects its input samples from the mandatory table linked in `config.yml` (default: `config/samples.tsv`).
+The exact lowercase `sample` column is required. When internal standards are enabled, each configured
+`<standard-name>_ng` column is also required. All other metadata columns may be changed or omitted. Leave missing
+metadata blank rather than entering `0` or `NA` as a placeholder. Only samples listed in `samples.tsv` are run by
+the pipeline.
+The sample sheet has the following layout:
+
+| sample  | condition | replicate | read1                      | read2                      |
+| ------- | --------- | --------- | -------------------------- | -------------------------- |
+| sample1 | wild_type | 1         | sample1.bwa.read1.fastq.gz | sample1.bwa.read2.fastq.gz |
+| sample2 | wild_type | 2         | sample2.bwa.read1.fastq.gz | sample2.bwa.read2.fastq.gz |
+
+### Parameters
+
+This table lists all parameters that can be used to run the workflow.
+
+| parameter          | type | details                               | default                        |
+| ------------------ | ---- | ------------------------------------- | ------------------------------ |
+| **samplesheet**    |      |                                       |                                |
+| path               | str  | path to samplesheet, mandatory        | "config/samples.tsv"           |
+| **get_genome**     |      |                                       |                                |
+| ncbi_ftp           | str  | link to a genome on NCBI's FTP server | link to _S. cerevisiae_ genome |
+| **simulate_reads** |      |                                       |                                |
+| read_length        | num  | length of target reads in bp          | 100                            |
+| read_number        | num  | number of total reads to be simulated | 10000                          |
+  </script>
+
+  <script id="package-config-schema" type="text/plain">
+$schema: "https://json-schema.org/draft/2020-12/schema"
+description: main configuration schema for the workflow
+properties:
+  projectName:
+    type: string
+    pattern: "^[A-Za-z0-9._-]+$"
+    description: single project name used for the directory, output filenames, report and results folder
+  samplesheet:
+    type: string
+    description: path to sample-sheet TSV file
+  conda_envs_dir:
+    type: string
+    description: shared directory for reusable Snakemake rule environments
+  qiime2version:
+    type: string
+    minLength: 1
+    description: QIIME 2 environment YAML path or installed Conda name; the workflow records its resolved environment
+  database_dir:
+    type: string
+    description: shared root for BBsplit and supporting reference files
+  SILVAversion:
+    type: string
+    minLength: 1
+    pattern: '^[0-9]+(?:\.[0-9]+)*$'
+    description: declared SILVA reference release
+  PR2version:
+    type: string
+    minLength: 1
+    pattern: '^[0-9]+(?:\.[0-9]+)*$'
+    description: declared PR2 reference release
+  silva_classifier:
+    type: string
+    minLength: 1
+    description: exact existing SILVA classifier path
+  pr2_classifier:
+    type: string
+    minLength: 1
+    description: exact existing PR2 classifier path
+  silva_database_dir:
+    type: string
+    minLength: 1
+    description: destination directory for a downloaded or trained SILVA classifier
+  pr2_database_dir:
+    type: string
+    minLength: 1
+    description: destination directory for a downloaded or trained PR2 classifier
+  SILVA_download_link:
+    type: string
+    description: pre-trained SILVA classifier URL; omit to select local training
+  PR2_download_link:
+    type: string
+    description: pre-trained PR2 classifier URL; omit to select local training
+  SILVA_download_md5:
+    type: string
+    pattern: "^[A-Fa-f0-9]{32}$"
+  PR2_download_md5:
+    type: string
+    pattern: "^[A-Fa-f0-9]{32}$"
+  silva_reference_mode:
+    type: string
+    enum: [amplicon, full_length]
+    description: local training region only; defaults to amplicon
+  pr2_reference_mode:
+    type: string
+    enum: [amplicon, full_length]
+    description: local training region only; defaults to amplicon
+  use_preexisting_bbsplit_database:
+    type: boolean
+    description: require and reuse the existing BBsplit database when true
+  use_preexisting_silva_database:
+    type: boolean
+    description: require and reuse the existing SILVA classifier when true
+  use_preexisting_pr2_database:
+    type: boolean
+    description: require and reuse the primer-compatible PR2 classifier when true
+  dada2:
+    type: object
+    properties:
+      prokaryotes:
+        type: object
+        properties:
+          max_ee_f: {type: number, minimum: 0}
+          max_ee_r: {type: number, minimum: 0}
+          trunc_len_f: {type: integer, minimum: 0}
+          trunc_len_r: {type: integer, minimum: 0}
+          trunc_q: {type: integer, minimum: 0}
+          min_overlap: {type: integer, minimum: 4}
+          pooling_method: {type: string, enum: [independent, pseudo]}
+          chimera_method: {type: string, enum: [consensus, pooled, none]}
+          min_fold_parent_over_abundance: {type: number, minimum: 1}
+          n_reads_learn: {type: integer, minimum: 1}
+      eukaryotes:
+        type: object
+        properties:
+          max_ee: {type: number, minimum: 0}
+          trunc_q: {type: integer, minimum: 0}
+          pooling_method: {type: string, enum: [independent, pseudo]}
+          chimera_method: {type: string, enum: [consensus, pooled, none]}
+          min_fold_parent_over_abundance: {type: number, minimum: 1}
+          n_reads_learn: {type: integer, minimum: 1}
+
+required:
+  - samplesheet
+  </script>
+
+  <script id="package-samples-schema" type="text/plain">
+$schema: "https://json-schema.org/draft/2020-12/schema"
+description: entries for the sample sheet
+properties:
+  sample:
+    type: string
+    description: sample name/identifier
+
+required:
+  - sample
+  </script>
+
+  <script id="package-setup-script" type="text/plain">
+#!/bin/bash -i
+
+if [[ ${#1} -eq 0 ]] ; then
+    echo 'Please enter a memorable and informative name for your project as an argument after this script < e.g. config/setup-scripts/setup-analysis-dir.sh EXAMPLENAME > (make sure the name does not include any spaces - use dashes or underscores instead). This name will be used to create an analysis directory and will be appended to output files.'
+    exit 0
+fi
+
+if [[ ! ${#1} -eq 0 ]] ; then
+	echo "An analysis directory has been created for you at /home/$USER/GRUMP-snakemake-pipeline/$1 . It contains all the scripts needed to run the pipeline. The only things you need to do now are: 1) Modify the config.yml and samples.tsv to allow it to find your input files, use the appropriate primers, choose database versions, etc 2) Add metadata as needed, 3) Add prokaryotic and eukaryotic SSU amplicon concentration information, 4) Add internal standard info when used. Important note: The pipeline assumes your input files are demultiplexed fastq.gz files with the primers still attached. Filenames are determined by the combination of the variables \$rawdatadir, \$R1file_ending, \$R2file_ending, and the sample column in the file \"samples.tsv\", so be sure everything matches."
+fi
+
+studyName=$1
+
+studyDir=/home/$USER/GRUMP-snakemake-pipeline/$studyName
+
+mkdir -p $studyDir
+
+cp -r config $studyDir
+cp -r snakemake $studyDir
+cp -r workflow $studyDir
+cp README.md $studyDir
+
+sed -i "s/tutorial/${studyName}/" $studyDir/config/config.yml
+  </script>
+</body>
+</html>
