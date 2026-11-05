@@ -14,8 +14,8 @@ Its canonical development source is
 https://github.com/Nwilliams96/UniCon-IGS-configuration.
 Copy only tested, committed website assets when updating this deployment;
 do not develop a separate version here or include raw sequencing data.
-The initial renamed-site deployment uses configuration commit
-[`5e4e9eb`](https://github.com/Nwilliams96/UniCon-IGS-configuration/commit/5e4e9eb).
+The deployed configuration snapshot uses commit
+[`777f7d4`](https://github.com/Nwilliams96/UniCon-IGS-configuration/commit/777f7d4).
 
 `eASV-Pipeline-Tutorial/index.html` preserves the previous public URL with a
 browser redirect, including query strings and section links when JavaScript
